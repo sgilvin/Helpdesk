@@ -25,6 +25,11 @@ class Cgn_Service_Crm_Main extends Cgn_Service {
 
 	function mainEvent($req, &$t) {
 		$u = $req->getUser();
+		if ($u->belongsToGroup('crmtech')) {
+			$t['isTech'] = true;
+		} else {
+			$t['isTech'] = false;
+		}
 
 		//find cached account ID, or do a look up
 		$accountId = $req->getSessionVar('crm_acct_id');
@@ -102,6 +107,7 @@ class Cgn_Service_Crm_Main extends Cgn_Service {
 	function _getFiles($accountId) {
 		Cgn::loadModLibrary('Crm::Crm_File');
 		$finder = new Crm_File_Model_List();
+		$finder->dataItem->_cols = array('crm_file_id', 'link_text', 'title', 'published_on', 'cgn_guid');
 		$finder->dataItem->andWhere('crm_acct_id', $accountId);
 		$finder->dataItem->limit(2);
 		$finder->_rsltByPkey = FALSE;

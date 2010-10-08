@@ -1,20 +1,39 @@
+#crm_main  {
+	border-left:1px solid #669;
+	border-bottom:1px solid #669;
+	padding-bottom:1em;
+	padding-left:1.4em;
+	float:right;
+	width:85%;
+}
 
 #crm_main p {
 	margin-top:0px;
 	margin-bottom:7px;
 }
-#crm_main .crm-hdr {
+
+.crm-hdr {
 color: #EEE; 
 margin-bottom: .5em;
 padding: .25em .5em;
 background-color: #777;
 }
 
+#crm_main_sub {
+ text-align:left;float:right;
+ width:100%;
+}
 /** wrapper for each post that is not the first post **/
 .issue-post {
 	border-top:1px solid #eee;
 	padding-top:7px;
+	width:40em;
 }
+
+.issue-post-hover {
+	border-top:3px solid #EEF;
+}
+
 /** wrapper for the first post **/
 .issue-post-first {
 }
@@ -23,11 +42,12 @@ background-color: #777;
 display:none;
 }
 .issue-post-controls {
-clear:left;
+/* clear:left; */
+margin-top:0.5em;
 margin-bottom:1em;
 }
 .issue-post-metadata {
-clear:left;
+/* clear:left; */
 }
 .issue-post-content {
 	margin-left:58px;
@@ -35,6 +55,11 @@ clear:left;
 
 .issue-post-content iframe{
 width:100%;
+}
+
+.issue-post-reply {
+ border:3px solid #fff;
+ width:40em;clear:right;padding:.25em;
 }
 
 .issue-acc {
@@ -67,11 +92,11 @@ margin-right:.5em;
 	margin: 0; padding:none;
 	font: bold 12px/26px Verdana, Arial, Tahoma, Sans-serif;
 	height: 26px;
-	width:140px;
+	width:10%;
 }
 .crm_menu ul {
 	margin: none; padding:none;
-	float: left;
+	/*float: left; */
 	list-style: none;
 	margin:0; padding: 0;
 }

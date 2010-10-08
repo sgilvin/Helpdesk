@@ -5,7 +5,14 @@ echo $t['toolbar']->toHtml();
 echo $t['viewTable']->toHtml();
 ?>
 
-<div id="crm_main">
+<br style="clear:right;"/>
+<h3>Owner</h3>
+
+<?php
+echo $t['ownerTable']->toHtml();
+?>
+
+
 <div>
 
 <div class="crm-hdr">Ask a Question
@@ -22,8 +29,9 @@ echo $t['viewTable']->toHtml();
 </div>
 
 </div>
-</div>
-<br style="clear:both;"/>
+
+
+<br style="clear:right;"/>
 <?
 echo $t['questHeader'];
 ?>

@@ -4,7 +4,7 @@ echo "<h2>".$t['acctName']."</h2>";
 
 <div id="crm_main">
 
-<div style="text-align:left;float:right;width:83%">
+<div id="crm_main_sub">
 
 
 <div class="crm-hdr">Ask a Question
@@ -88,6 +88,9 @@ No files.
 
 		<a href="<?=cgn_appurl('crm', 'download', '', array('id'=>$_issue->get('crm_file_id')), 'https').$_issue->get('link_text');?>"><?php echo $_issue->get('title');?></a>
 		<p>
+			Uploaded on: <?php echo date('Y-m-d', $_issue->get('published_on'));?>
+		</p>
+		<p>
 		<?= $_issue->get('description');?>
 		</p>
 		</div>
@@ -131,6 +134,14 @@ No files.
 <li><a href="<?=cgn_appurl('crm', '', '', '', 'https');?>">Overview</a></li>
 <li><a href="<?=cgn_appurl('crm', 'issue', '', '', 'https');?>">Questions</a></li>
 <li><a href="<?=cgn_appurl('crm', 'file', '', '', 'https');?>">Files</a></li>
+<li><a href="<?=cgn_appurl('crm', 'acct', '', '', 'https');?>">Members</a></li>
+<?php
+if ($t['isTech']):
+?>
+<li><a href="<?=cgn_sappurl('crmtech');?>">CRM Tech</a></li>
+<?php
+endif;
+?>
 <!--
 <li><a href="#">Corkboard</a></li>
 -->
