@@ -11,9 +11,8 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 
 	public $representing = "Account";
 	public $pageTitle    = 'CRM Accounts';
-	public $dataItemName = 'crm_acct';
 	public $dataModelName = 'Crm_Acct';
-	//
+
 	public $tableHeaderList = array('ID', 'Company Name', 'Start Date');
 	public $tableColList    = array('crm_acct_id', 'org_name', 'approved_on');
 	public $tablePaged      = TRUE;
@@ -39,7 +38,7 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 	public function eventBefore($req, &$t) {
 		Cgn_Template::addSiteCss('crm_screen.css');
 		Cgn_Template::addSiteCss('crmtech_screen.css');
-		$t['pageNav'] = '<div><a href="'.cgn_appurl('crmtech').'">Back to CRM home</a></div>';
+		$t['pageNav'] = '<div><a href="'.cgn_appurl('crmtech').'">Back to tech dashboard</a></div>';
 	}
 
 	/**
@@ -67,10 +66,12 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 	}
 
 
-	function saveEvent($req, &$t) {
+	public function saveEvent($req, &$t) {
 		parent::saveEvent($req, $t);
-		$this->item->set('approved_on', time());
-		$this->item->save();
+		if ($this->item->get('approved_on') == 0) {
+			$this->item->set('approved_on', time());
+			$this->item->save();
+		}
 	}
 
 	/**
@@ -136,12 +137,29 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 	 * Approve the application by creating a new organization
 	 */
 	function saveApproveEvent($req, &$t) {
+		$u = $req->getUser();
+
 		//load a default data model if one is set
 		$c = $this->dataModelName;
 		$this->dataModel = new $c();
 		$this->dataModel->load($req->cleanInt('id'));
 
-		$u = $req->getUser();
+		if ($req->cleanString('doapprove') == 'd') {
+			//delete application
+			$this->dataModel->deleteAccount();
+			$u->addMessage("Application deleted");
+			$t['url'] = cgn_sappurl('crmtech', 'acct');
+			$this->presenter = 'redirect';
+			return;
+		}
+
+		//if not 'a', don't do anything
+		if ($req->cleanString('doapprove') != 'a') {
+			$t['url'] = cgn_sappurl('crmtech', 'acct');
+			$this->presenter = 'redirect';
+			return;
+		}
+
 		$this->dataModel->turnOnAccount($u->userId);
 
 		//create a new organization and add this user as the leader
@@ -153,8 +171,7 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 
 		$this->_sendApprovalEmail($this->dataModel->get('owner_id'));
 
-		$user = $req->getUser();
-		$user->addMessage("Created new support account.");
+		$u->addMessage("Created new support account.");
 	}
 
 
@@ -189,13 +206,14 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 			if ($editMode == TRUE) {
 				if ($k == 'id' || $k == $dataModel->get('_table').'_id') continue;
 			}
+			$v = $this->formatValue($k, $v, $dataModel);
 			$widget = new Cgn_Form_ElementInput($k);
 			$widget->size = 55;
 			$f->appendElement($widget, $v);
 			unset($widget);
 		}
 
-		$f->appendElement(new Cgn_Form_ElementHidden('org_account_id'), $acctValues['cgn_account_id']);
+//		$f->appendElement(new Cgn_Form_ElementHidden('org_account_id'), $acctValues['cgn_account_id']);
 		if ($editMode == TRUE) {
 			$f->appendElement(new Cgn_Form_ElementHidden('id'), $dataModel->getPrimaryKey());
 		}
@@ -235,6 +253,12 @@ class Cgn_Service_Crmtech_Acct extends Cgn_Service_Crud {
 		}
 		unset($widget);
 
+		$widget = new Cgn_Form_ElementRadio('doapprove', 'Approve/Deny?');
+		$widget->size = 55;
+		$widget->addChoice('Approve this organization', 'a');
+		$widget->addChoice('Deny and remove this application', 'd');
+		$f->appendElement($widget, $values['agreement_ip_addr']);
+		unset($widget);
 
 		$f->appendElement(new Cgn_Form_ElementHidden('id'), $values['crm_acct_id']);
 		if ($editMode == TRUE) {

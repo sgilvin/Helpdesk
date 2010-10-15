@@ -40,7 +40,8 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 	public function eventBefore($req, &$t) {
 		Cgn_Template::setPageTitle('CRM Tech Issues');
 		Cgn_Template::addSiteCss('crm_screen.css');
-		$t['pageNav'] = '<div><a href="'.cgn_appurl('crmtech').'">Back to CRM home</a></div>';
+		Cgn_Template::addSiteCss('crmtech_screen.css');
+		$t['pageNav'] = '<div><a href="'.cgn_appurl('crmtech').'">Back to tech dashboard</a></div>';
 	}
 
 	/**
@@ -48,6 +49,10 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 	 */
 	public function mainEvent($req, &$t) {
 		$ret = parent::mainEvent($req, $t);
+
+		//remove the "add a question" button
+		array_pop($t['toolbar']->buttons);
+
 		$viewUrl = cgn_appurl('crmtech', 'issue', 'view');
 		$editUrl = cgn_appurl('crmtech', 'issue', 'edit');
 		$t['dataGrid']->setColRenderer(0, new Cgn_Mvc_Table_ColRenderer_Url($editUrl, array('id'=>0) ));
@@ -88,6 +93,9 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 
 		//make toolbar
 		$this->_makeToolbar($t);
+		//remove the "add a question" button
+		array_pop($t['toolbar']->buttons);
+
 		$c = $this->dataModelName;
 		$this->dataModel = new $c();
 		$this->dataModel->dataItem->_cols = array(
@@ -150,6 +158,8 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 
 		//make toolbar
 		$this->_makeToolbar($t);
+		//remove the "add a question" button
+		array_pop($t['toolbar']->buttons);
 
 		//load a default data model if one is set
 		if ($this->dataModelName != '') {
@@ -202,11 +212,15 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 
 		$t['account'] = new Cgn_DataItem('crm_acct');
 		$t['account']->load($this->dataModel->get('crm_acct_id'));
+
+		$t['replyForm'] = $this->_loadReplyForm($statusNames, $this->dataModel);
 	}
 
 	/**
 	 * Not used
+	 * @DEPRECATED
 	 */
+	/*
 	function saveEvent($req, &$t) {
 		Cgn::loadModLibrary('CRM::Crm_Issue');
 
@@ -243,7 +257,7 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 
 		$this->redirectHome($t);
 	}
-
+*/
 
 	/**
 	 * Save a new or old reply to a question
@@ -263,18 +277,26 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 		}
 
 		$parent = Crm_Issue_Model::createNewIssue();
-		$parent->load($thread);
-		//$parent->set('status_id', Crm_Issue_Model::STATUS_DON);
-		$parent->set('status_id', $sid);
-		$parent->save();
+		if ($thread && $parent->load($thread)) {
+			//update status
+			if ($sid != $parent->get('status_id')) {
+				$parent->set('status_id', $sid);
+				$parent->save();
+			}
+		}
 
-		$accountId = $parent->get('crm_acct_id');
+		//use thread account id if there is one
+		if (!$parent->dataItem->_isNew) {
+			$accountId = $parent->get('crm_acct_id');
+		} else {
+			$accountId = $req->cleanInt('crm_acct_id');
+		}
 
 
-		$comment = $req->cleanMultiLine('ctx');
+		$comment = $req->cleanMultiLine('message');
 		if (trim($comment) == '') {
 			//we just saved the status change, don't save a new reply.
-			$t['url'] = cgn_appurl('crmtech', '', '', '', 'https');
+			$t['url'] = cgn_sappurl('crmtech');
 			$this->presenter = 'redirect';
 			return;
 		}
@@ -288,7 +310,7 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 		$issue->save();
 
 		$this->_alertAccount($thread);
-		$t['url'] = cgn_appurl('crmtech', '', '', '', 'https');
+		$t['url'] = cgn_sappurl('crmtech');
 		$this->presenter = 'redirect';
 	}
 
@@ -515,6 +537,41 @@ class Cgn_Service_Crmtech_Issue extends Cgn_Service_Crud {
 			$emails[ $row->get('cgn_user_id') ] = $row->get('email');
 		}
 		return $emails;
+	}
+
+
+	/**
+	 * Show a quick reply form
+	 */
+	protected function _loadReplyForm($statusList, $issue) {
+		$values = $issue->valuesAsArray();
+
+		$f = new Cgn_Form('reply_'. $issue->getPrimaryKey());
+		$f->layout = new Cgn_Form_Layout_Dl();
+		$f->width = '40em';
+		$f->action = cgn_sappurl('crmtech','issue','saveReply');
+
+
+		$widget = new Cgn_Form_ElementText('message', 'Reply', 7, 60);
+		$f->appendElement($widget);
+
+		$widget = new Cgn_Form_ElementSelect('status_id', 'Status');
+		$widget->size = 1;
+		foreach ($statusList as $_status) {
+			$widget->addChoice(
+				Crm_Issue_Model::_getStatusLabelStatic($_status),
+				 $_status);
+		}
+		if (isset($values['status_id'])) {
+			$widget->setValue((int)$values['status_id']);
+		}
+		$f->appendElement($widget, $v);
+		unset($widget);
+
+		$hidden = new Cgn_Form_ElementHidden('thread_id');
+		$f->appendElement($hidden, $issue->getPrimaryKey());
+		return $f;
+	
 	}
 
 }
